@@ -22,6 +22,20 @@ class WebPage:
     classdocs
     '''
     
+    
+    
+    def __init__(self):
+        '''
+        Constructor
+        '''
+        self.charSet = 'utf-8';
+        
+##################################################
+class Pattern:
+    '''
+    classdocs
+    '''
+    
     def __init__(self):
         '''
         Constructor

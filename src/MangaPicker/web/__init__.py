@@ -112,8 +112,8 @@ send = asynchronous
 
 # User agent and referrer.
 # Used to identify the application accessing the web.
-USER_AGENT = "Pattern/2.3 +http://www.clips.ua.ac.be/pages/pattern"
-REFERRER   = "http://www.clips.ua.ac.be/pages/pattern"
+USER_AGENT = ""
+REFERRER   = ""
 
 # Mozilla user agent.
 # Websites can include code to block out any application except browsers.
@@ -151,12 +151,12 @@ def urldecode(query):
     """
     def _format(s):
         if s == "None":
-             return None
+            return None
         if s.isdigit(): 
-             return int(s)
-        try: return float(s)
-        except:
-             return s
+            return int(s)
+        try: 
+            return float(s)
+        except: return s
     query = [(kv.split("=")+[None])[:2] for kv in query.lstrip("?").split("&")]
     query = [(urllib.unquote_plus(bytestring(k)), urllib.unquote_plus(bytestring(v))) for k, v in query]
     query = [(u(k), u(v)) for k, v in query]
@@ -180,6 +180,8 @@ class HTTPError(URLError):
     pass # URL causes an error on the contacted server.
 class HTTP301Redirect(HTTPError):
     pass 
+class URLTimeoutError:
+    pass
 # Too many redirects.
 # The site may be trying to set a cookie and waiting for you to return it,
 # or taking other measures to discern a browser from a script.
@@ -346,7 +348,7 @@ class URL:
         except ValueError, e:
             raise URLError, e
             
-    def download(self, timeout=10, cached=True, throttle=0, proxy=None, user_agent=USER_AGENT, referrer=REFERRER, authentication=None, unicode=False):
+    def download(self, timeout=10, cached=True, throttle=0, proxy=None, user_agent=USER_AGENT, referrer=REFERRER, authentication=None, is_unicode=False):
         """ Downloads the content at the given URL (by default it will be cached locally).
             Unless unicode=False, the content is returned as a unicode string.
         """
@@ -467,7 +469,7 @@ class URL:
     def copy(self):
         return URL(self.string, self.method, self.query)
 
-def download(url=u"", method=GET, query={}, timeout=10, cached=True, throttle=0, proxy=None, user_agent=USER_AGENT, referrer=REFERRER, authentication=None, unicode=False):
+def download(url=u"", method=GET, query={}, timeout=10, cached=True, throttle=0, proxy=None, user_agent=USER_AGENT, referrer=REFERRER, authentication=None, is_unicode=False):
     """ Downloads the content at the given URL (by default it will be cached locally).
         Unless unicode=False, the content is returned as a unicode string.
     """
