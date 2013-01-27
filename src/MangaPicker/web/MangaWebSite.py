@@ -32,71 +32,49 @@ class MangaPage(webSite.WebPage):
     '''
 
 
-    def __init__(self,url,param,pattern,folder):
+    def __init__(self,pattern,folder):
         '''
         Constructor
         '''
-        self.url = url;
-        self.param = param;
-        self.startNum = 1;
-        self.totalPages = 1;
+
         self.pattern = pattern; # a Manga Image pattern , means how to find this Image
         self.folder = folder;
-        
-        html = urllib2.urlopen(url).read();
-        self.totalPages = int(self._GetTotalNum(html));
+
             
         if os.path.exists(folder) == False:
             os.makedirs(folder)
-        
-        cj = cookielib.LWPCookieJar()
-        cookie_support = urllib2.HTTPCookieProcessor(cj)
-        opener = urllib2.build_opener(cookie_support, urllib2.HTTPHandler)
-        urllib2.install_opener(opener)
-        
+
         
     def ChangeCharSet(self,charSet):
         self.charSet = charSet;
     
-    def _GetTotalNum(self,html):
-        reTotalNum = 'value="[0-9]+"'
-        val = re.findall(reTotalNum, html)
-        reTotalNum = '[0-9]+'
-        val = str(val[-1:])
-        val = re.search(reTotalNum, val).group()
-        return val
-    
-    
-    def GetPageList(self):
-        '''
-        Return need to down pages list.
-        '''
-        pages = [];
-        for i in range(self.startNum,self.totalPages+1):
-            url = self.url + '?' + self.param + '=' + str(i);
-            pages.append(url);
-        return pages;
-    
-    def GetImageFromPage(self,startNum = 1):
-        self.startNum = startNum;
-        self.images = [];
-        for pageUrl in self.GetPageList():
-            imgUrl = self.pattern.GetImageUrl(pageUrl);
-            self.DownloadImg(pageUrl, imgUrl, self.folder)
+    def GetImageFromPage(self,startNum = 1,isChangeImgName=False):
+        self.pattern.DownloadImg(startNum, self.folder, isChangeImgName)
             
-    def _GetImage(self,page):
-        '''
-        Get image from page using the pattern
-        '''
-        img = '';
-        return img;
     
-    def DownloadImg(self,pageUrl,imageUrl,folder,fileName=''):
+class ImanhuaPattern(webSite.Pattern): 
+        
+    def __init__(self,pageUrl):
+        '''
+        Constructor
+
+        '''
+        self.pageUrl = pageUrl;
+        self.param = 'p';
+        self.startNum = 1;
+        self.patternDic = {};
+        self.patternDic['url'] = 'http://t5.mangafiles.com/Files/Images';
+        self.patternDic['imagePrefix'] = 'imanhua_';    #imanhua_ ,  JOJO_, no prefix  
+        self.patternDic['imgFormat'] = 'jpg'; 
+        self._InitSomeArgs();
+
+        
+    def _InitSomeArgs(self):
+        pageUrl = self.pageUrl
         headers = {
         'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.6) Gecko/20091201 Firefox/3.5.6',
         'Referer': pageUrl
         }
-
         cj = cookielib.LWPCookieJar()
         cookie_support = urllib2.HTTPCookieProcessor(cj)
         opener = urllib2.build_opener(cookie_support, urllib2.HTTPHandler)
@@ -104,49 +82,35 @@ class MangaPage(webSite.WebPage):
         
         req = urllib2.Request(url = pageUrl, headers = headers)
         result = urllib2.urlopen(req).read()
+        self.totalNum = int(self._GetTotalNum(result));
+        
         imgData = None;
-        print('Getting ' + imageUrl);
-        testTimes = 1;
-        while testTimes <= 3:
-            try:
-                testTimes = testTimes + 1;
-                req = urllib2.Request(url = imageUrl, headers = headers)
-                imgData = urllib2.urlopen(req).read()
-                if imgData:
-                    break;
-            except:
-                ext = imageUrl[imageUrl.rfind('.')+1:];
-                if ext == 'png':
-                    imageUrl = imageUrl.replace('png','jpg');
-                elif ext == 'jpg':
-                    imageUrl = imageUrl.replace('jpg','png');
-            
-                continue;
-            
-        extention = imageUrl.rfind('.');
-        extention = imageUrl[extention+1:];
-        if fileName == '':
-            fileName = imageUrl[imageUrl.rfind('/')+1:imageUrl.rfind('.')];
-        path = folder + '\\' + fileName + '.' + extention;
-        if not os.path.exists(path):
-            if imgData:
-                imgFile = open(path,'wb')
-                imgFile.write(imgData);
+        
+        testPrefix = ('imanhua_','JOJO_','')
+        testFormat = ('jpg','png');
+        for prefix in testPrefix:
+            for myFormat in testFormat:
+                self.patternDic['imagePrefix'] = prefix;  
+                self.patternDic['imgFormat'] = myFormat;
+                imageUrl = self.GetImageUrl(pageUrl);
+                try:
+                    req = urllib2.Request(url = imageUrl, headers = headers)
+                    imgData = urllib2.urlopen(req).read()
+                    if imgData:
+                        print('ok: ' + prefix + ' + ' + myFormat);
+                        return;
+                except:
+                    print('error: ' + prefix + ' + ' + myFormat);
                 
-        print('Done ' + imageUrl);
-        time.sleep(0.5)
-        
-class MangaPattern(webSite.Pattern): 
-        
-    def __init__(self,patternDic):
+    def GetPageList(self):
         '''
-        Constructor
-        patternDic:
-        url
-        imagePrefix
-        imgFormat
+        Return need to down pages list.
         '''
-        self.patternDic = patternDic;
+        pages = [];
+        for i in range(self.startNum,self.totalNum+1):
+            url = self.pageUrl + '?' + self.param + '=' + str(i);
+            pages.append(url);
+        return pages;
     
     def GetImageUrl(self,pageUrl):
         '''
@@ -162,42 +126,165 @@ class MangaPattern(webSite.Pattern):
         SecNum = re.search(reSec, pageUrl).group()
         SecNum = SecNum.strip('list_')
         nowNum = pageUrl[pageUrl.rfind('=')+1:];
+        if nowNum == pageUrl:
+            nowNum = 1;
         nowNum = '%03d'  %(int(nowNum));
         imageUrl = self.patternDic['url'].rstrip('/') + '/'+firstNum + '/' + SecNum + '/' + self.patternDic['imagePrefix'] + nowNum + '.' + self.patternDic['imgFormat'];
         return imageUrl;
-        
-    def _ChangeNum(self,num):
-        pass
     
+    def DownloadOnePage(self,pageUrl,folder,isChangeImgName):
+        headers = {
+        'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.6) Gecko/20091201 Firefox/3.5.6',
+        'Referer': pageUrl
+        }
+        cj = cookielib.LWPCookieJar()
+        cookie_support = urllib2.HTTPCookieProcessor(cj)
+        opener = urllib2.build_opener(cookie_support, urllib2.HTTPHandler)
+        urllib2.install_opener(opener)
+        
+        req = urllib2.Request(url = pageUrl, headers = headers)
+        result = urllib2.urlopen(req).read()
+        imgData = None;
+        
+        imageUrl = self.GetImageUrl(pageUrl);
+        print('Getting ' + imageUrl);
+        testTimes = 1;
+        while testTimes <= 3:
+            try:
+                testTimes = testTimes + 1;
+                req = urllib2.Request(url = imageUrl, headers = headers)
+                imgData = urllib2.urlopen(req).read()
+                if imgData:
+                    break;
+            except:
+                ext = self.patternDic['imgFormat'];
+                if ext == 'png':
+                    imageUrl = imageUrl.replace('png','jpg');
+                    self.patternDic['imgFormat'] = 'jpg';
+                elif ext == 'jpg':
+                    imageUrl = imageUrl.replace('jpg','png');
+                    self.patternDic['imgFormat'] = 'png';
+                
+                continue;
+            
+        extention = imageUrl.rfind('.');
+        extention = imageUrl[extention+1:];
+
+        if isChangeImgName == False:
+            fileName = imageUrl[imageUrl.rfind('/')+1:imageUrl.rfind('.')];
+        else:
+            fileName = '%03d' %self.NowPageNum;
+        path = folder + '\\' + fileName + '.' + extention;
+        if not os.path.exists(path):
+            if imgData:
+                imgFile = open(path,'wb')
+                imgFile.write(imgData);
+                
+        print('Done ' + imageUrl);
+        time.sleep(0.5)
+
+
+
+class Comic131Pattern(webSite.Pattern):
+    
+    def __init__(self,pageUrl):
+        webSite.Pattern.__init__(self);
+        self.pageUrl = pageUrl;
+        html = urllib2.urlopen(pageUrl).read()
+        self.totalNum = self.GetTotalNum(html);
+        
+    def GetPageList(self):
+        '''
+        Return need to down pages list.
+        http://comic.131.com/content/2104/188362/1.html
+        '''
+        pages = [];
+        baseUrl = self.pageUrl[:self.pageUrl.rfind('/')+1];
+        for i in range(self.startNum,self.totalNum+1):
+            
+            url = baseUrl + str(i) + '.html';
+            pages.append(url);
+        return pages;
+    
+    def GetImageUrl(self,pageUrl):
+        '''
+        pattern:
+        <img id="comicBigPic" src="http://res6.comic.131.com/38/b5/5be37d62ea991612fe9af771e78d2350b90c.jpg"
+        '''
+        html = urllib2.urlopen(pageUrl).read();
+
+        reImg = '<img id="comicBigPic" src=.+" alt'
+        result = re.search(reImg,html).group();
+        reImg = 'src=.*"';
+        result = re.search(reImg,result).group();
+        result = result.replace('src="','').replace('"','');
+        
+        return result;
+        #print(result);
+     
+
+    
+    def DownloadOnePage(self,pageUrl,folder,isChangeImgName):
+        headers = {
+        'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.6) Gecko/20091201 Firefox/3.5.6',
+        'Referer': pageUrl
+        }
+
+        imgData = None;
+        imageUrl = self.GetImageUrl(pageUrl);
+        print('Getting ' + imageUrl);
+
+        try:
+            req = urllib2.Request(url = imageUrl, headers = headers)
+            imgData = urllib2.urlopen(req).read()
+            if not imgData:
+                imgData = '';
+        except:
+            print('Error ' + imageUrl);
+            
+            
+        extention = imageUrl.rfind('.');
+        extention = imageUrl[extention+1:];
+
+        if isChangeImgName == False:
+            fileName = imageUrl[imageUrl.rfind('/')+1:imageUrl.rfind('.')];
+        else:
+            fileName = '%03d' %self.NowPageNum;
+        path = folder + '\\' + fileName + '.' + extention;
+        if not os.path.exists(path):
+            if imgData:
+                imgFile = open(path,'wb')
+                imgFile.write(imgData);
+                
+        print('Done ' + imageUrl);
+        time.sleep(0.5)
        
     
     
 if __name__ == '__main__':
     
-    patternDic = {'url':'http://t5.mangafiles.com/Files/Images','imagePrefix':'imanhua_','imgFormat':'jpg'}
-    pattern = MangaPattern(patternDic);
+    pa = Comic131Pattern('http://comic.131.com/content/2104/188362/1.html');
+    pa.GetImageUrl('http://comic.131.com/content/2104/188362/1.html')
     
-#    url = 'http://www.imanhua.com/comic/1906/list_65095.html';
-#    param = 'p'
-#    folder = '''e:\\Manga\OnePiece\\064''';
-
-    url = 'http://www.imanhua.com/comic/1906/list_65095.html';
-    param = 'p'
     folder = '''e:\\Manga\OnePiece\\065''';
-    
-    myMangaPage = MangaPage(url,param,pattern,folder)
-    
-    myMangaPage.GetImageFromPage();
-    
-    print('All Done')
-#    htmlData = urllib2.urlopen(url).read();
-#    reTotalNum = 'value="[0-9]+"'
-#    val = re.findall(reTotalNum, htmlData)
-#    reTotalNum = '[0-9]+'
-#    val = str(val[-1:])
-#    val = re.search(reTotalNum, val).group()
+    myMangaPage = MangaPage(pa,folder)
+    myMangaPage.GetImageFromPage(isChangeImgName = True);
+#    url = 'http://www.imanhua.com/comic/1906/list_65095.html';
+#    pattern = ImanhuaPattern(url);
+#    folder = '''e:\\Manga\OnePiece\\065''';
 #
-#    print(val);
-
+#    myMangaPage = MangaPage(pattern,folder)
+#    myMangaPage.GetImageFromPage();
+#    
+#    print('All Done')
+    
+#    url = 'http://www.imanhua.com/comic/479/list_77967.html';
+#    pattern = ImanhuaPattern(url);
+#    folder = '''e:\\Manga\Chaodiancipao\\001''';
+#
+#    myMangaPage = MangaPage(pattern,folder)
+#    myMangaPage.GetImageFromPage();
+#    
+#    print('All Done')
     
     

@@ -7,7 +7,7 @@ Created on 2013-1-23
 
 import urllib, urllib2
 import cookielib
-
+import re
 
 
 ###############################################
@@ -47,19 +47,35 @@ class Pattern:
         '''
         Constructor
         '''
+        self.pageUrl = '';
+        self.startNum = 1;
+        self.totalNum = 1;
         
+    def GetTotalNum(self,html):
+        reTotalNum = 'value="[0-9]+"'
+        val = re.findall(reTotalNum, html)
+        reTotalNum = '[0-9]+'
+        val = str(val[-1:])
+        val = re.search(reTotalNum, val).group()
+        return int(val);
+    
+    def DownloadImg(self,startNum, folder, isChangeImgName):
+        self.NowPageNum = startNum;
+        for pageUrl in self.GetPageList():
+            self.DownloadOnePage(pageUrl, folder, isChangeImgName);
+            self.NowPageNum = self.NowPageNum + 1;
+        print('All Done')    
+        
+    def GetPageList(self):
+        assert 0; raise NoimplementError;
+    def GetImageUrl(self,pageUrl):
+        assert 0; raise NoimplementError;
+    def DownloadOnePage(self,pageUrl,folder,isChangeImgName):
+        assert 0; raise NoimplementError;
         
 ###############################################
-class Downloader:
-    
-    @staticmethod
-    def DownloadImg(imageUrl,folder,fileName=''):
-        extention = imageUrl.rfind('.');
-        extention = imageUrl[extention+1:];
-        if fileName == '':
-            fileName = imageUrl[imageUrl.rfind('/')+1:imageUrl.rfind('.')];
-        path = folder + '\\' + fileName + '.' + extention;
-
+class NoimplementError(Exception):
+    pass;
 
 
 
