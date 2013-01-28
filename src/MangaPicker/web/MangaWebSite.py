@@ -48,8 +48,11 @@ class MangaPage(webSite.WebPage):
     def ChangeCharSet(self,charSet):
         self.charSet = charSet;
     
-    def GetImageFromPage(self,startNum = 1,isChangeImgName=False):
-        self.pattern.DownloadImg(startNum, self.folder, isChangeImgName)
+    def GetImageFromPage(self,startNum = 1,isChangeImgName=False,MultiThreadNum=0):
+        if MultiThreadNum == 0:
+            self.pattern.DownloadImg(startNum, self.folder, isChangeImgName)
+        else:
+            self.pattern.DownloadImgMultiThread(startNum, self.folder, isChangeImgName,MultiThreadNum);
             
     
 class ImanhuaPattern(webSite.Pattern): 
@@ -132,7 +135,7 @@ class ImanhuaPattern(webSite.Pattern):
         imageUrl = self.patternDic['url'].rstrip('/') + '/'+firstNum + '/' + SecNum + '/' + self.patternDic['imagePrefix'] + nowNum + '.' + self.patternDic['imgFormat'];
         return imageUrl;
     
-    def DownloadOnePage(self,pageUrl,folder,isChangeImgName):
+    def DownloadOnePage(self,pageUrl,folder,isChangeImgName,nowPageNum):
         headers = {
         'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.6) Gecko/20091201 Firefox/3.5.6',
         'Referer': pageUrl
@@ -147,7 +150,7 @@ class ImanhuaPattern(webSite.Pattern):
         imgData = None;
         
         imageUrl = self.GetImageUrl(pageUrl);
-        print('Getting ' + imageUrl);
+#        print('Getting ' + imageUrl);
         testTimes = 1;
         while testTimes <= 3:
             try:
@@ -173,14 +176,14 @@ class ImanhuaPattern(webSite.Pattern):
         if isChangeImgName == False:
             fileName = imageUrl[imageUrl.rfind('/')+1:imageUrl.rfind('.')];
         else:
-            fileName = '%03d' %self.NowPageNum;
+            fileName = '%03d' %nowPageNum;
         path = folder + '\\' + fileName + '.' + extention;
         if not os.path.exists(path):
             if imgData:
                 imgFile = open(path,'wb')
                 imgFile.write(imgData);
                 
-        print('Done ' + imageUrl);
+#        print('Done ' + imageUrl);
         time.sleep(0.5)
 
 
@@ -224,7 +227,7 @@ class Comic131Pattern(webSite.Pattern):
      
 
     
-    def DownloadOnePage(self,pageUrl,folder,isChangeImgName):
+    def DownloadOnePage(self,pageUrl,folder,isChangeImgName,nowPageNum):
         headers = {
         'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.6) Gecko/20091201 Firefox/3.5.6',
         'Referer': pageUrl
@@ -232,7 +235,7 @@ class Comic131Pattern(webSite.Pattern):
 
         imgData = None;
         imageUrl = self.GetImageUrl(pageUrl);
-        print('Getting ' + imageUrl);
+#        print('Getting ' + imageUrl);
 
         try:
             req = urllib2.Request(url = imageUrl, headers = headers)
@@ -249,26 +252,28 @@ class Comic131Pattern(webSite.Pattern):
         if isChangeImgName == False:
             fileName = imageUrl[imageUrl.rfind('/')+1:imageUrl.rfind('.')];
         else:
-            fileName = '%03d' %self.NowPageNum;
+            fileName = '%03d' %nowPageNum;
         path = folder + '\\' + fileName + '.' + extention;
         if not os.path.exists(path):
             if imgData:
                 imgFile = open(path,'wb')
                 imgFile.write(imgData);
                 
-        print('Done ' + imageUrl);
+#        print('Done ' + imageUrl);
         time.sleep(0.5)
        
     
     
 if __name__ == '__main__':
     
-    pa = Comic131Pattern('http://comic.131.com/content/2104/188362/1.html');
-    pa.GetImageUrl('http://comic.131.com/content/2104/188362/1.html')
-    
-    folder = '''e:\\Manga\OnePiece\\065''';
+    pa = Comic131Pattern('http://comic.131.com/content/2104/188363/1.html');
+    folder = '''e:\\Manga\OnePiece\\066''';
     myMangaPage = MangaPage(pa,folder)
-    myMangaPage.GetImageFromPage(isChangeImgName = True);
+    start = time.time();
+    myMangaPage.GetImageFromPage(startNum = 80,isChangeImgName = True,MultiThreadNum=4);
+    print('Pages All Done')
+    print('total use time :' + str(time.time() - start) + 'ms');     
+#    myMangaPage.ZipFolder();
 #    url = 'http://www.imanhua.com/comic/1906/list_65095.html';
 #    pattern = ImanhuaPattern(url);
 #    folder = '''e:\\Manga\OnePiece\\065''';

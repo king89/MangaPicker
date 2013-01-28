@@ -8,7 +8,11 @@ Created on 2013-1-23
 import urllib, urllib2
 import cookielib
 import re
-
+import threading 
+import time
+from Queue import Queue
+from time import sleep
+import MangaPicker.localzip as zip
 
 ###############################################
 #WebSite
@@ -35,14 +39,21 @@ class WebPage:
         '''
         Constructor
         '''
+        self.pattern = 'pattern';   # a Manga Image pattern , means how to find this Image
+        self.folder = 'folder';
         self.charSet = 'utf-8';
-        
+    
+    def ZipFolder(self):
+        folder = self.folder;
+        zipFolder = folder
+        zipName = folder + '.zip'
+        zip.zip_dir(folder, zipName);
 ##################################################
 class Pattern:
     '''
     classdocs
     '''
-    
+    global lock
     def __init__(self):
         '''
         Constructor
@@ -61,17 +72,50 @@ class Pattern:
     
     def DownloadImg(self,startNum, folder, isChangeImgName):
         self.NowPageNum = startNum;
+        nowPageNum = 1;
         for pageUrl in self.GetPageList():
-            self.DownloadOnePage(pageUrl, folder, isChangeImgName);
-            self.NowPageNum = self.NowPageNum + 1;
+            self.DownloadOnePage(pageUrl, folder, isChangeImgName,nowPageNum);
+            nowPageNum = nowPageNum + 1;
         print('All Done')    
         
     def GetPageList(self):
         assert 0; raise NoimplementError;
     def GetImageUrl(self,pageUrl):
         assert 0; raise NoimplementError;
-    def DownloadOnePage(self,pageUrl,folder,isChangeImgName):
+    def DownloadOnePage(self,pageUrl,folder,isChangeImgName,nowPageNum):
         assert 0; raise NoimplementError;
+        
+    def DownloadImgMultiThread(self,startNum, folder, isChangeImgName,ThreadNum = 2):
+
+        self.urlQueue = Queue();
+        nowPageNum = startNum;
+        pageList = self.GetPageList()[nowPageNum-1:];
+        for pageUrl in pageList:
+            argDic ={'pageUrl':pageUrl,'folder':folder,'isChangeImgName':isChangeImgName,'nowPageNum':nowPageNum};
+            self.urlQueue.put(argDic)
+            nowPageNum += 1;
+        threadList = [];
+        for i in range(ThreadNum):
+            t = threading.Thread(target=self._working)
+            t.setDaemon(True)
+            t.start()
+            threadList.append(t);
+        for thr in threadList:
+            thr.join();
+
+        
+    def _working(self):
+        while True:
+            start = time.time();
+            arguments = self.urlQueue.get()
+            pageUrl = arguments['pageUrl'];
+            folder = arguments['folder'];
+            isChangeImgName = arguments['isChangeImgName'];
+            nowPageNum = arguments['nowPageNum'];
+            self.DownloadOnePage(pageUrl, folder, isChangeImgName,nowPageNum)
+            print('finished pic ' + str(nowPageNum));
+            print('use time :' + str(time.time() - start) + 'ms');
+            self.urlQueue.task_done()    
         
 ###############################################
 class NoimplementError(Exception):
