@@ -262,15 +262,117 @@ class Comic131Pattern(webSite.Pattern):
 #        print('Done ' + imageUrl);
         time.sleep(0.5)
        
+class HHManPattern(webSite.Pattern):
+    def __init__(self,pageUrl):
+        webSite.Pattern.__init__(self);
+        self.pageUrl = pageUrl;
+        html = urllib2.urlopen(pageUrl).read()
+        codeRe = re.compile('(?<=PicLlstUrl = ").+?(?=")')
+        self.code = re.search(codeRe,html).group()
+        print self.code
+        self.imgList = self.decode(); 
+        self.totalNum = len(self.imgList)
+        
+    def decode(self):
+        code = self.code
+        result = ''
+        key = 'tavzscoewrm'
+        spliter = key[-1]
+        key = key[:-1]
+        i = 0
+        for k in key:
+            code = code.replace(k,str(i));
+            i = i + 1
+        code = code.split(spliter)
+        print code
+        
+        for c in code:
+            result = result + chr(int(c))
+        
+        result = result.split('|')
+        
+        resultList = []
+        baseUrl = 'http://61.164.109.162:5458/dm03/'
+        for p in result:
+            p = baseUrl + p
+            resultList.append(p)
+            
+        return resultList
     
+    def GetPageList(self):
+        '''
+        http://hhcomic.com/hhpage/184295/hh118645.htm?s=3*v=1
+        '''
+
+        pages = [];
+        baseUrl = self.pageUrl[:-1];
+        for i in range(self.startNum,self.totalNum+1):
+            url = baseUrl + str(i)
+            pages.append(url);
+            
+        return pages;
+    
+    def GetImageUrl(self,pageUrl):
+        num = pageUrl[pageUrl.rfind('=')+1:]
+        number = (int)(num)
+        return self.imgList[number-1];
+      
+    def DownloadOnePage(self,pageUrl,folder,isChangeImgName,nowPageNum): 
+        imgData = None;
+        imageUrl = self.GetImageUrl(pageUrl);
+#        print('Getting ' + imageUrl);
+
+        try:
+            cj = cookielib.LWPCookieJar()
+
+            cookie_support = urllib2.HTTPCookieProcessor(cj)
+        
+            opener = urllib2.build_opener(cookie_support, urllib2.HTTPHandler)
+        
+            urllib2.install_opener(opener)
+            
+            headers = {
+            'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.6) Gecko/20091201 Firefox/3.5.6',
+            'Referer':pageUrl,
+            'Host':'61.164.109.162:5458'
+            }
+            
+            req = urllib2.Request(
+            url = imageUrl,
+            headers = headers
+            )
+            print imageUrl
+            imgData = urllib2.urlopen(req).read()
+            if not imgData:
+                imgData = '';
+        except:
+            print('Error ' + imageUrl);
+            
+            
+        extention = imageUrl.rfind('.');
+        extention = imageUrl[extention+1:];
+
+        if isChangeImgName == False:
+            fileName = imageUrl[imageUrl.rfind('/')+1:imageUrl.rfind('.')];
+        else:
+            fileName = '%03d' %nowPageNum;
+        path = folder + '\\' + fileName + '.' + extention;
+        if not os.path.exists(path):
+            if imgData:
+                imgFile = open(path,'wb')
+                imgFile.write(imgData);
+                
+#        print('Done ' + imageUrl);
+        time.sleep(0.5)
     
 if __name__ == '__main__':
     
-    pa = Comic131Pattern('http://comic.131.com/content/2104/188363/1.html');
-    folder = '''e:\\Manga\OnePiece\\066''';
+    pa = HHManPattern('http://hhcomic.com/hhpage/184295/hh118645.htm?s=3*v=1')
+    folder = '''e:\\Manga\OnePiece\\068''';
     myMangaPage = MangaPage(pa,folder)
     start = time.time();
-    myMangaPage.GetImageFromPage(startNum = 80,isChangeImgName = True,MultiThreadNum=4);
+    myMangaPage.GetImageFromPage(startNum = 1,isChangeImgName = True,MultiThreadNum=4);
+    time.sleep(1);
     print('Pages All Done')
     print('total use time :' + str(time.time() - start) + 'ms');     
 #    myMangaPage.ZipFolder();
