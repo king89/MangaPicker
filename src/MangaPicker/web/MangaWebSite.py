@@ -17,12 +17,12 @@ class MangaWebSite(webSite.WebSite):
     classdocs
     '''
 
-    def __init__(self,url,pageList):
+    def __init__(self, url, pageList):
         '''
         Constructor
         '''
         self.url = url;
-        self.pageList = pageList; #all pageslist need to download Manga
+        self.pageList = pageList;  # all pageslist need to download Manga
         
 ##########################
 
@@ -32,12 +32,12 @@ class MangaPage(webSite.WebPage):
     '''
 
 
-    def __init__(self,pattern,folder):
+    def __init__(self, pattern, folder):
         '''
         Constructor
         '''
 
-        self.pattern = pattern; # a Manga Image pattern , means how to find this Image
+        self.pattern = pattern;  # a Manga Image pattern , means how to find this Image
         self.folder = folder;
 
             
@@ -45,19 +45,19 @@ class MangaPage(webSite.WebPage):
             os.makedirs(folder)
 
         
-    def ChangeCharSet(self,charSet):
+    def ChangeCharSet(self, charSet):
         self.charSet = charSet;
     
-    def GetImageFromPage(self,startNum = 1,isChangeImgName=False,MultiThreadNum=0):
+    def GetImageFromPage(self, startNum=1, isChangeImgName=False, MultiThreadNum=0):
         if MultiThreadNum == 0:
             self.pattern.DownloadImg(startNum, self.folder, isChangeImgName)
         else:
-            self.pattern.DownloadImgMultiThread(startNum, self.folder, isChangeImgName,MultiThreadNum);
+            self.pattern.DownloadImgMultiThread(startNum, self.folder, isChangeImgName, MultiThreadNum);
             
     
 class ImanhuaPattern(webSite.Pattern): 
         
-    def __init__(self,pageUrl):
+    def __init__(self, pageUrl):
         '''
         Constructor
 
@@ -67,7 +67,7 @@ class ImanhuaPattern(webSite.Pattern):
         self.startNum = 1;
         self.patternDic = {};
         self.patternDic['url'] = 'http://t5.mangafiles.com/Files/Images';
-        self.patternDic['imagePrefix'] = 'imanhua_';    #imanhua_ ,  JOJO_, no prefix  
+        self.patternDic['imagePrefix'] = 'imanhua_';  # imanhua_ ,  JOJO_, no prefix  
         self.patternDic['imgFormat'] = 'jpg'; 
         self._InitSomeArgs();
 
@@ -83,21 +83,21 @@ class ImanhuaPattern(webSite.Pattern):
         opener = urllib2.build_opener(cookie_support, urllib2.HTTPHandler)
         urllib2.install_opener(opener)
         
-        req = urllib2.Request(url = pageUrl, headers = headers)
+        req = urllib2.Request(url=pageUrl, headers=headers)
         result = urllib2.urlopen(req).read()
         self.totalNum = int(self._GetTotalNum(result));
         
         imgData = None;
         
-        testPrefix = ('imanhua_','JOJO_','')
-        testFormat = ('jpg','png');
+        testPrefix = ('imanhua_', 'JOJO_', '')
+        testFormat = ('jpg', 'png');
         for prefix in testPrefix:
             for myFormat in testFormat:
                 self.patternDic['imagePrefix'] = prefix;  
                 self.patternDic['imgFormat'] = myFormat;
                 imageUrl = self.GetImageUrl(pageUrl);
                 try:
-                    req = urllib2.Request(url = imageUrl, headers = headers)
+                    req = urllib2.Request(url=imageUrl, headers=headers)
                     imgData = urllib2.urlopen(req).read()
                     if imgData:
                         print('ok: ' + prefix + ' + ' + myFormat);
@@ -110,12 +110,12 @@ class ImanhuaPattern(webSite.Pattern):
         Return need to down pages list.
         '''
         pages = [];
-        for i in range(self.startNum,self.totalNum+1):
+        for i in range(self.startNum, self.totalNum + 1):
             url = self.pageUrl + '?' + self.param + '=' + str(i);
             pages.append(url);
         return pages;
     
-    def GetImageUrl(self,pageUrl):
+    def GetImageUrl(self, pageUrl):
         '''
         This is the pageUrl pattern example
         
@@ -128,14 +128,14 @@ class ImanhuaPattern(webSite.Pattern):
         firstNum = firstNum.strip('/')
         SecNum = re.search(reSec, pageUrl).group()
         SecNum = SecNum.strip('list_')
-        nowNum = pageUrl[pageUrl.rfind('=')+1:];
+        nowNum = pageUrl[pageUrl.rfind('=') + 1:];
         if nowNum == pageUrl:
             nowNum = 1;
-        nowNum = '%03d'  %(int(nowNum));
-        imageUrl = self.patternDic['url'].rstrip('/') + '/'+firstNum + '/' + SecNum + '/' + self.patternDic['imagePrefix'] + nowNum + '.' + self.patternDic['imgFormat'];
+        nowNum = '%03d' % (int(nowNum));
+        imageUrl = self.patternDic['url'].rstrip('/') + '/' + firstNum + '/' + SecNum + '/' + self.patternDic['imagePrefix'] + nowNum + '.' + self.patternDic['imgFormat'];
         return imageUrl;
     
-    def DownloadOnePage(self,pageUrl,folder,isChangeImgName,nowPageNum):
+    def DownloadOnePage(self, pageUrl, folder, isChangeImgName, nowPageNum):
         headers = {
         'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.6) Gecko/20091201 Firefox/3.5.6',
         'Referer': pageUrl
@@ -145,7 +145,7 @@ class ImanhuaPattern(webSite.Pattern):
         opener = urllib2.build_opener(cookie_support, urllib2.HTTPHandler)
         urllib2.install_opener(opener)
         
-        req = urllib2.Request(url = pageUrl, headers = headers)
+        req = urllib2.Request(url=pageUrl, headers=headers)
         result = urllib2.urlopen(req).read()
         imgData = None;
         
@@ -155,32 +155,32 @@ class ImanhuaPattern(webSite.Pattern):
         while testTimes <= 3:
             try:
                 testTimes = testTimes + 1;
-                req = urllib2.Request(url = imageUrl, headers = headers)
+                req = urllib2.Request(url=imageUrl, headers=headers)
                 imgData = urllib2.urlopen(req).read()
                 if imgData:
                     break;
             except:
                 ext = self.patternDic['imgFormat'];
                 if ext == 'png':
-                    imageUrl = imageUrl.replace('png','jpg');
+                    imageUrl = imageUrl.replace('png', 'jpg');
                     self.patternDic['imgFormat'] = 'jpg';
                 elif ext == 'jpg':
-                    imageUrl = imageUrl.replace('jpg','png');
+                    imageUrl = imageUrl.replace('jpg', 'png');
                     self.patternDic['imgFormat'] = 'png';
                 
                 continue;
             
         extention = imageUrl.rfind('.');
-        extention = imageUrl[extention+1:];
+        extention = imageUrl[extention + 1:];
 
         if isChangeImgName == False:
-            fileName = imageUrl[imageUrl.rfind('/')+1:imageUrl.rfind('.')];
+            fileName = imageUrl[imageUrl.rfind('/') + 1:imageUrl.rfind('.')];
         else:
-            fileName = '%03d' %nowPageNum;
+            fileName = '%03d' % nowPageNum;
         path = folder + '\\' + fileName + '.' + extention;
         if not os.path.exists(path):
             if imgData:
-                imgFile = open(path,'wb')
+                imgFile = open(path, 'wb')
                 imgFile.write(imgData);
                 
 #        print('Done ' + imageUrl);
@@ -190,7 +190,7 @@ class ImanhuaPattern(webSite.Pattern):
 
 class Comic131Pattern(webSite.Pattern):
     
-    def __init__(self,pageUrl):
+    def __init__(self, pageUrl):
         webSite.Pattern.__init__(self);
         self.pageUrl = pageUrl;
         html = urllib2.urlopen(pageUrl).read()
@@ -202,14 +202,14 @@ class Comic131Pattern(webSite.Pattern):
         http://comic.131.com/content/2104/188362/1.html
         '''
         pages = [];
-        baseUrl = self.pageUrl[:self.pageUrl.rfind('/')+1];
-        for i in range(self.startNum,self.totalNum+1):
+        baseUrl = self.pageUrl[:self.pageUrl.rfind('/') + 1];
+        for i in range(self.startNum, self.totalNum + 1):
             
             url = baseUrl + str(i) + '.html';
             pages.append(url);
         return pages;
     
-    def GetImageUrl(self,pageUrl):
+    def GetImageUrl(self, pageUrl):
         '''
         pattern:
         <img id="comicBigPic" src="http://res6.comic.131.com/38/b5/5be37d62ea991612fe9af771e78d2350b90c.jpg"
@@ -217,17 +217,17 @@ class Comic131Pattern(webSite.Pattern):
         html = urllib2.urlopen(pageUrl).read();
 
         reImg = '<img id="comicBigPic" src=.+" alt'
-        result = re.search(reImg,html).group();
+        result = re.search(reImg, html).group();
         reImg = 'src=.*"';
-        result = re.search(reImg,result).group();
-        result = result.replace('src="','').replace('"','');
+        result = re.search(reImg, result).group();
+        result = result.replace('src="', '').replace('"', '');
         
         return result;
-        #print(result);
+        # print(result);
      
 
     
-    def DownloadOnePage(self,pageUrl,folder,isChangeImgName,nowPageNum):
+    def DownloadOnePage(self, pageUrl, folder, isChangeImgName, nowPageNum):
         headers = {
         'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.6) Gecko/20091201 Firefox/3.5.6',
         'Referer': pageUrl
@@ -238,7 +238,7 @@ class Comic131Pattern(webSite.Pattern):
 #        print('Getting ' + imageUrl);
 
         try:
-            req = urllib2.Request(url = imageUrl, headers = headers)
+            req = urllib2.Request(url=imageUrl, headers=headers)
             imgData = urllib2.urlopen(req).read()
             if not imgData:
                 imgData = '';
@@ -247,28 +247,28 @@ class Comic131Pattern(webSite.Pattern):
             
             
         extention = imageUrl.rfind('.');
-        extention = imageUrl[extention+1:];
+        extention = imageUrl[extention + 1:];
 
         if isChangeImgName == False:
-            fileName = imageUrl[imageUrl.rfind('/')+1:imageUrl.rfind('.')];
+            fileName = imageUrl[imageUrl.rfind('/') + 1:imageUrl.rfind('.')];
         else:
-            fileName = '%03d' %nowPageNum;
+            fileName = '%03d' % nowPageNum;
         path = folder + '\\' + fileName + '.' + extention;
         if not os.path.exists(path):
             if imgData:
-                imgFile = open(path,'wb')
+                imgFile = open(path, 'wb')
                 imgFile.write(imgData);
                 
 #        print('Done ' + imageUrl);
         time.sleep(0.5)
        
 class HHManPattern(webSite.Pattern):
-    def __init__(self,pageUrl):
+    def __init__(self, pageUrl):
         webSite.Pattern.__init__(self);
         self.pageUrl = pageUrl;
         html = urllib2.urlopen(pageUrl).read()
         codeRe = re.compile('(?<=PicLlstUrl = ").+?(?=")')
-        self.code = re.search(codeRe,html).group()
+        self.code = re.search(codeRe, html).group()
         print self.code
         self.imgList = self.decode(); 
         self.totalNum = len(self.imgList)
@@ -281,7 +281,7 @@ class HHManPattern(webSite.Pattern):
         key = key[:-1]
         i = 0
         for k in key:
-            code = code.replace(k,str(i));
+            code = code.replace(k, str(i));
             i = i + 1
         code = code.split(spliter)
         print code
@@ -301,80 +301,80 @@ class HHManPattern(webSite.Pattern):
     
     def GetPageList(self):
         '''
-        http://hhcomic.com/hhpage/184295/hh118645.htm?s=3*v=1
+        http://hhcomic.com/hhpage/184295/hh118645.htm?s=3
         '''
 
         pages = [];
-        baseUrl = self.pageUrl[:-1];
-        for i in range(self.startNum,self.totalNum+1):
+        baseUrl = self.pageUrl + 's=3*v='
+        for i in range(self.startNum, self.totalNum + 1):
             url = baseUrl + str(i)
             pages.append(url);
             
         return pages;
     
-    def GetImageUrl(self,pageUrl):
-        num = pageUrl[pageUrl.rfind('=')+1:]
+    def GetImageUrl(self, pageUrl):
+        num = pageUrl[pageUrl.rfind('=') + 1:]
         number = (int)(num)
-        return self.imgList[number-1];
+        return self.imgList[number - 1];
       
-    def DownloadOnePage(self,pageUrl,folder,isChangeImgName,nowPageNum): 
+    def DownloadOnePage(self, pageUrl, folder, isChangeImgName, nowPageNum): 
         imgData = None;
         imageUrl = self.GetImageUrl(pageUrl);
 #        print('Getting ' + imageUrl);
-
-        try:
-            cj = cookielib.LWPCookieJar()
-
-            cookie_support = urllib2.HTTPCookieProcessor(cj)
-        
-            opener = urllib2.build_opener(cookie_support, urllib2.HTTPHandler)
-        
-            urllib2.install_opener(opener)
-            
-            headers = {
-            'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.6) Gecko/20091201 Firefox/3.5.6',
-            'Referer':pageUrl,
-            'Host':'61.164.109.162:5458'
-            }
-            
-            req = urllib2.Request(
-            url = imageUrl,
-            headers = headers
-            )
-            print imageUrl
-            imgData = urllib2.urlopen(req).read()
-            if not imgData:
-                imgData = '';
-        except:
-            print('Error ' + imageUrl);
-            
-            
-        extention = imageUrl.rfind('.');
-        extention = imageUrl[extention+1:];
-
         if isChangeImgName == False:
-            fileName = imageUrl[imageUrl.rfind('/')+1:imageUrl.rfind('.')];
+            fileName = imageUrl[imageUrl.rfind('/') + 1:imageUrl.rfind('.')];
         else:
-            fileName = '%03d' %nowPageNum;
+            fileName = '%03d' % nowPageNum;
+                            
+        extention = imageUrl.rfind('.');
+        extention = imageUrl[extention + 1:];
         path = folder + '\\' + fileName + '.' + extention;
         if not os.path.exists(path):
-            if imgData:
-                imgFile = open(path,'wb')
-                imgFile.write(imgData);
+            
+            try:
+                cj = cookielib.LWPCookieJar()
+    
+                cookie_support = urllib2.HTTPCookieProcessor(cj)
+            
+                opener = urllib2.build_opener(cookie_support, urllib2.HTTPHandler)
+            
+                urllib2.install_opener(opener)
                 
+                headers = {
+                'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.6) Gecko/20091201 Firefox/3.5.6',
+                'Referer':pageUrl,
+                'Host':'61.164.109.162:5458'
+                }
+                
+                req = urllib2.Request(
+                url=imageUrl,
+                headers=headers
+                )
+                print imageUrl
+                imgData = urllib2.urlopen(req).read()
+                if not imgData:
+                    imgData = '';
+            except:
+                print('Error ' + imageUrl);
+                
+            if imgData:
+                imgFile = open(path, 'wb')
+                imgFile.write(imgData);
+                    
 #        print('Done ' + imageUrl);
         time.sleep(0.5)
     
 if __name__ == '__main__':
-    
-    pa = HHManPattern('http://hhcomic.com/hhpage/184295/hh118645.htm?s=3*v=1')
-    folder = '''e:\\Manga\OnePiece\\068''';
-    myMangaPage = MangaPage(pa,folder)
+    pa = HHManPattern('http://hhcomic.com/hhpage/186596/hh57294.htm')
+    folder = '''e:\\Manga\KaXiu\\002''';
+    myMangaPage = MangaPage(pa, folder)
     start = time.time();
-    myMangaPage.GetImageFromPage(startNum = 1,isChangeImgName = True,MultiThreadNum=4);
+    myMangaPage.GetImageFromPage(startNum=1, isChangeImgName=True, MultiThreadNum=4);
     time.sleep(1);
     print('Pages All Done')
-    print('total use time :' + str(time.time() - start) + 'ms');     
+    print('total use time :' + str(time.time() - start) + 's');  
+
+       
 #    myMangaPage.ZipFolder();
 #    url = 'http://www.imanhua.com/comic/1906/list_65095.html';
 #    pattern = ImanhuaPattern(url);

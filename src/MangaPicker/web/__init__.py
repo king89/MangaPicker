@@ -65,11 +65,11 @@ class AsynchronousRequest:
             For good reasons, there is no way to interrupt a background process (i.e. Python thread).
             You are responsible for ensuring that the given function doesn't hang.
         """
-        self._response = None # The return value of the given function.
-        self._error    = None # The exception (if any) raised by the function.
-        self._time     = time.time()
+        self._response = None  # The return value of the given function.
+        self._error = None  # The exception (if any) raised by the function.
+        self._time = time.time()
         self._function = function
-        self._thread   = threading.Thread(target=self._fetch, args=(function,)+args, kwargs=kwargs)
+        self._thread = threading.Thread(target=self._fetch, args=(function,) + args, kwargs=kwargs)
         self._thread.start()
         
     def _fetch(self, function, *args, **kwargs):
@@ -113,15 +113,15 @@ send = asynchronous
 # User agent and referrer.
 # Used to identify the application accessing the web.
 USER_AGENT = ""
-REFERRER   = ""
+REFERRER = ""
 
 # Mozilla user agent.
 # Websites can include code to block out any application except browsers.
 MOZILLA = "Mozilla/5.0"
 
 # HTTP request method.
-GET  = "get"  # Data is encoded in the URL.
-POST = "post" # Data is encoded in the message body.
+GET = "get"  # Data is encoded in the URL.
+POST = "post"  # Data is encoded in the message body.
 
 # URL parts.
 # protocol://username:password@domain:port/path/page?query_string#anchor
@@ -129,16 +129,16 @@ PROTOCOL, USERNAME, PASSWORD, DOMAIN, PORT, PATH, PAGE, QUERY, ANCHOR = \
     "protocol", "username", "password", "domain", "port", "path", "page", "query", "anchor"
 
 # MIME type.
-MIMETYPE_WEBPAGE    = ["text/html"]
+MIMETYPE_WEBPAGE = ["text/html"]
 MIMETYPE_STYLESHEET = ["text/css"]
-MIMETYPE_PLAINTEXT  = ["text/plain"]
-MIMETYPE_PDF        = ["application/pdf"]
-MIMETYPE_NEWSFEED   = ["application/rss+xml", "application/atom+xml"]
-MIMETYPE_IMAGE      = ["image/gif", "image/jpeg", "image/png", "image/tiff"]
-MIMETYPE_AUDIO      = ["audio/mpeg", "audio/mp4", "audio/x-aiff", "audio/x-wav"]
-MIMETYPE_VIDEO      = ["video/mpeg", "video/mp4", "video/quicktime"]
-MIMETYPE_ARCHIVE    = ["application/x-stuffit", "application/x-tar", "application/zip"]
-MIMETYPE_SCRIPT     = ["application/javascript", "application/ecmascript"]
+MIMETYPE_PLAINTEXT = ["text/plain"]
+MIMETYPE_PDF = ["application/pdf"]
+MIMETYPE_NEWSFEED = ["application/rss+xml", "application/atom+xml"]
+MIMETYPE_IMAGE = ["image/gif", "image/jpeg", "image/png", "image/tiff"]
+MIMETYPE_AUDIO = ["audio/mpeg", "audio/mp4", "audio/x-aiff", "audio/x-wav"]
+MIMETYPE_VIDEO = ["video/mpeg", "video/mp4", "video/quicktime"]
+MIMETYPE_ARCHIVE = ["application/x-stuffit", "application/x-tar", "application/zip"]
+MIMETYPE_SCRIPT = ["application/javascript", "application/ecmascript"]
 
 def extension(filename):
     """ Returns the extension in the given filename: "cat.jpg" => ".jpg".
@@ -157,11 +157,11 @@ def urldecode(query):
         try: 
             return float(s)
         except: return s
-    query = [(kv.split("=")+[None])[:2] for kv in query.lstrip("?").split("&")]
+    query = [(kv.split("=") + [None])[:2] for kv in query.lstrip("?").split("&")]
     query = [(urllib.unquote_plus(bytestring(k)), urllib.unquote_plus(bytestring(v))) for k, v in query]
     query = [(u(k), u(v)) for k, v in query]
     query = [(k, _format(v) or None) for k, v in query]
-    query = dict([(k,v) for k, v in query if k != ""])
+    query = dict([(k, v) for k, v in query if k != ""])
     return query
     
 url_decode = urldecode
@@ -173,11 +173,11 @@ def proxy(host, protocol="https"):
     return (host, protocol)
 
 class URLError(Exception):
-    pass # URL contains errors (e.g. a missing t in htp://).
+    pass  # URL contains errors (e.g. a missing t in htp://).
 class URLTimeout(URLError):
-    pass # URL takes to long to load.
+    pass  # URL takes to long to load.
 class HTTPError(URLError):
-    pass # URL causes an error on the contacted server.
+    pass  # URL causes an error on the contacted server.
 class HTTP301Redirect(HTTPError):
     pass 
 class URLTimeoutError:
@@ -189,17 +189,17 @@ class URLTimeoutError:
 # and pass it to urllib2.build_opener() in URL.open()
 
 class HTTP400BadRequest(HTTPError):
-    pass # URL contains an invalid request.
+    pass  # URL contains an invalid request.
 class HTTP401Authentication(HTTPError):
-    pass # URL requires a login and password.
+    pass  # URL requires a login and password.
 class HTTP403Forbidden(HTTPError):
-    pass # URL is not accessible (user-agent?)
+    pass  # URL is not accessible (user-agent?)
 class HTTP404NotFound(HTTPError):
-    pass # URL doesn't exist on the internet.
+    pass  # URL doesn't exist on the internet.
 class HTTP420Error(HTTPError):
-    pass # Used by Twitter for rate limiting.
+    pass  # Used by Twitter for rate limiting.
 class HTTP500InternalServerError(HTTPError):
-    pass # Generic server error.
+    pass  # Generic server error.
     
     
 class URL:
@@ -218,10 +218,10 @@ class URL:
             - URL.anchor  : the page anchor.
             If method is POST, the query string is sent with HTTP POST.
         """
-        self.__dict__["method"]    = method # Use __dict__ directly since __setattr__ is overridden.
-        self.__dict__["_string"]   = u(string)
-        self.__dict__["_parts"]    = None
-        self.__dict__["_headers"]  = None
+        self.__dict__["method"] = method  # Use __dict__ directly since __setattr__ is overridden.
+        self.__dict__["_string"] = u(string)
+        self.__dict__["_parts"] = None
+        self.__dict__["_headers"] = None
         self.__dict__["_redirect"] = None
         if isinstance(string, URL):
             self.__dict__["method"] = string.method
@@ -237,21 +237,21 @@ class URL:
             This is a cached method that is only invoked when necessary, and only once.
         """
         p = urlparse.urlsplit(self._string)
-        P = {PROTOCOL: p[0],            # http
-             USERNAME: u"",             # user
-             PASSWORD: u"",             # pass
-               DOMAIN: p[1],            # example.com
-                 PORT: u"",             # 992
-                 PATH: p[2],            # [animal]
-                 PAGE: u"",             # bird
-                QUERY: urldecode(p[3]), # {"species": "seagull", "q": None}
-               ANCHOR: p[4]             # wings
+        P = {PROTOCOL: p[0],  # http
+             USERNAME: u"",  # user
+             PASSWORD: u"",  # pass
+               DOMAIN: p[1],  # example.com
+                 PORT: u"",  # 992
+                 PATH: p[2],  # [animal]
+                 PAGE: u"",  # bird
+                QUERY: urldecode(p[3]),  # {"species": "seagull", "q": None}
+               ANCHOR: p[4]  # wings
         }
         # Split the username and password from the domain.
         if "@" in P[DOMAIN]:
             P[USERNAME], \
-            P[PASSWORD] = (p[1].split("@")[0].split(":")+[u""])[:2]
-            P[DOMAIN]   =  p[1].split("@")[1]
+            P[PASSWORD] = (p[1].split("@")[0].split(":") + [u""])[:2]
+            P[DOMAIN] = p[1].split("@")[1]
         # Split the port number from the domain.
         if ":" in P[DOMAIN]:
             P[DOMAIN], \
@@ -260,7 +260,7 @@ class URL:
         # Split the base page from the path.
         if "/" in P[PATH]:
             P[PAGE] = p[2].split("/")[-1]
-            P[PATH] = p[2][:len(p[2])-len(P[PAGE])].strip("/").split("/")
+            P[PATH] = p[2][:len(p[2]) - len(P[PAGE])].strip("/").split("/")
             P[PATH] = filter(lambda v: v != "", P[PATH])
         else:
             P[PAGE] = p[2].strip("/")
@@ -272,7 +272,7 @@ class URL:
     def _get_string(self): return unicode(self)
     def _set_string(self, v):
         self.__dict__["_string"] = u(v)
-        self.__dict__["_parts"]  = None
+        self.__dict__["_parts"] = None
         
     string = property(_get_string, _set_string)
     
@@ -321,7 +321,7 @@ class URL:
             urllib2.install_opener(proxy)
         try:
             request = urllib2.Request(bytestring(url), post, {
-                        "User-Agent": user_agent, 
+                        "User-Agent": user_agent,
                            "Referer": referrer
                          })
             # Basic authentication is established with authentication=(username, password).

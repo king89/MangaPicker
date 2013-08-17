@@ -12,10 +12,10 @@ import threading
 import time
 from Queue import Queue
 from time import sleep
-import MangaPicker.localzip as zip
+import localzip.myZip as zip
 
 ###############################################
-#WebSite
+# WebSite
 class WebSite:
     '''
     classdocs
@@ -27,7 +27,7 @@ class WebSite:
         Constructor
         '''
 #################################################
-#WebPage
+# WebPage
 class WebPage:
     '''
     classdocs
@@ -39,7 +39,7 @@ class WebPage:
         '''
         Constructor
         '''
-        self.pattern = 'pattern';   # a Manga Image pattern , means how to find this Image
+        self.pattern = 'pattern';  # a Manga Image pattern , means how to find this Image
         self.folder = 'folder';
         self.charSet = 'utf-8';
     
@@ -62,7 +62,7 @@ class Pattern:
         self.startNum = 1;
         self.totalNum = 1;
         
-    def GetTotalNum(self,html):
+    def GetTotalNum(self, html):
         reTotalNum = 'value="[0-9]+"'
         val = re.findall(reTotalNum, html)
         reTotalNum = '[0-9]+'
@@ -70,28 +70,28 @@ class Pattern:
         val = re.search(reTotalNum, val).group()
         return int(val);
     
-    def DownloadImg(self,startNum, folder, isChangeImgName):
+    def DownloadImg(self, startNum, folder, isChangeImgName):
         self.NowPageNum = startNum;
         nowPageNum = 1;
         for pageUrl in self.GetPageList():
-            self.DownloadOnePage(pageUrl, folder, isChangeImgName,nowPageNum);
+            self.DownloadOnePage(pageUrl, folder, isChangeImgName, nowPageNum);
             nowPageNum = nowPageNum + 1;
         print('All Done')    
         
     def GetPageList(self):
         assert 0; raise NoimplementError;
-    def GetImageUrl(self,pageUrl):
+    def GetImageUrl(self, pageUrl):
         assert 0; raise NoimplementError;
-    def DownloadOnePage(self,pageUrl,folder,isChangeImgName,nowPageNum):
+    def DownloadOnePage(self, pageUrl, folder, isChangeImgName, nowPageNum):
         assert 0; raise NoimplementError;
         
-    def DownloadImgMultiThread(self,startNum, folder, isChangeImgName,ThreadNum = 2):
+    def DownloadImgMultiThread(self, startNum, folder, isChangeImgName, ThreadNum=2):
 
         self.urlQueue = Queue();
         nowPageNum = startNum;
-        pageList = self.GetPageList()[nowPageNum-1:];
+        pageList = self.GetPageList()[nowPageNum - 1:];
         for pageUrl in pageList:
-            argDic ={'pageUrl':pageUrl,'folder':folder,'isChangeImgName':isChangeImgName,'nowPageNum':nowPageNum};
+            argDic = {'pageUrl':pageUrl, 'folder':folder, 'isChangeImgName':isChangeImgName, 'nowPageNum':nowPageNum};
             self.urlQueue.put(argDic)
             nowPageNum += 1;
         threadList = [];
@@ -100,8 +100,7 @@ class Pattern:
             t.setDaemon(True)
             t.start()
             threadList.append(t);
-        for thr in threadList:
-            thr.join();
+        self.urlQueue.join();
 
         
     def _working(self):
@@ -112,7 +111,7 @@ class Pattern:
             folder = arguments['folder'];
             isChangeImgName = arguments['isChangeImgName'];
             nowPageNum = arguments['nowPageNum'];
-            self.DownloadOnePage(pageUrl, folder, isChangeImgName,nowPageNum)
+            self.DownloadOnePage(pageUrl, folder, isChangeImgName, nowPageNum)
             print('finished pic ' + str(nowPageNum));
             print('use time :' + str(time.time() - start) + 'ms');
             self.urlQueue.task_done()    
@@ -143,15 +142,15 @@ if __name__ == '__main__':
     }
     
     req = urllib2.Request(
-    url = url1,
-    headers = headers
+    url=url1,
+    headers=headers
     )
     
     result = urllib2.urlopen(req).read()
     
     req = urllib2.Request(
-    url = url2,
-    headers = headers
+    url=url2,
+    headers=headers
     )
     data2 = urllib2.urlopen(req).read()
     file1 = open('d:\\data.png', 'wb');
@@ -159,7 +158,7 @@ if __name__ == '__main__':
     
 
     
-    #Downloader.DownloadImg(url2,folder);
+    # Downloader.DownloadImg(url2,folder);
 
 
 
