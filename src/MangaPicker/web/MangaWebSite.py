@@ -3,13 +3,13 @@ Created on 2013-1-23
 
 @author: king
 '''
-import WebSiteBase as webSite
+import web.WebSiteBase as webSite
 import urllib, urllib2
 import cookielib
 import re
 import os
 import time
-from pyquery import PyQuery as pq
+#from pyquery import PyQuery as pq
 
 
 class MangaWebSite(webSite.WebSite):
@@ -32,18 +32,23 @@ class MangaPage(webSite.WebPage):
     '''
 
 
-    def __init__(self, pattern, folder):
+    def __init__(self, url, folder):
         '''
         Constructor
         '''
+        pattern = self.GetPattern(url)
+        self.pattern = pattern  # a Manga Image pattern , means how to find this Image
+        self.folder = folder
 
-        self.pattern = pattern;  # a Manga Image pattern , means how to find this Image
-        self.folder = folder;
-
-            
         if os.path.exists(folder) == False:
             os.makedirs(folder)
-
+            
+    def GetPattern(self,url):
+        if url.find('imanhua.com') > 0:
+            return ImanhuaPattern(url)
+        elif url.find('hhcomic.com'):
+            return HHComicPattern(url)
+            
         
     def ChangeCharSet(self, charSet):
         self.charSet = charSet;
@@ -262,21 +267,35 @@ class Comic131Pattern(webSite.Pattern):
 #        print('Done ' + imageUrl);
         time.sleep(0.5)
        
-class HHManPattern(webSite.Pattern):
+class HHComicPattern(webSite.Pattern):
+    ServerList = ['http://61.164.109.162:5458/dm01/', 'http://61.164.109.141:9141/dm02/', 'http://61.164.109.162:5458/dm03/', 'http://61.164.109.141:9141/dm04/', 'http://61.164.109.162:5458/dm05/', 'http://61.164.109.141:9141/dm06/', 'http://61.164.109.162:5458/dm07/', 'http://61.164.109.141:9141/dm08/', 'http://61.164.109.162:5458/dm09/', 'http://61.164.109.162:5458/dm10/', 'http://61.164.109.141:9141/dm11/', 'http://61.164.109.162:5458/dm12/', 'http://61.164.109.162:5458/dm13/', 'http://8.8.8.8:99/dm14/', 'http://61.164.109.141:9141/dm15/', 'http://142.4.34.102/dm16/']
     def __init__(self, pageUrl):
         webSite.Pattern.__init__(self);
         self.pageUrl = pageUrl;
+        self.server = self.GetServer(pageUrl)
         html = urllib2.urlopen(pageUrl).read()
-        codeRe = re.compile('(?<=PicLlstUrl = ").+?(?=")')
-        self.code = re.search(codeRe, html).group()
-        print self.code
+        codeRe = re.compile('(?<=PicListUrl = ").+?(?=")')
+        self.code = re.search(codeRe, html)
+        if not self.code is None:
+            self.code = self.code.group()
+            self.key = 'tahficoewrm'
+        else:
+            codeRe = re.compile('(?<=PicLlstUrl = ").+?(?=")')
+            self.code = re.search(codeRe, html).group()  
+            self.key = 'tavzscoewrm'
+#         print self.code
         self.imgList = self.decode(); 
         self.totalNum = len(self.imgList)
         
+    def GetServer(self,url):
+        p = re.compile('(?<=s=)[0-9]{1,2}')
+        result = re.search(p,url).group()
+        return int(result)
+    
     def decode(self):
         code = self.code
         result = ''
-        key = 'tavzscoewrm'
+        key = self.key
         spliter = key[-1]
         key = key[:-1]
         i = 0
@@ -284,7 +303,7 @@ class HHManPattern(webSite.Pattern):
             code = code.replace(k, str(i));
             i = i + 1
         code = code.split(spliter)
-        print code
+#         print code
         
         for c in code:
             result = result + chr(int(c))
@@ -292,7 +311,7 @@ class HHManPattern(webSite.Pattern):
         result = result.split('|')
         
         resultList = []
-        baseUrl = 'http://61.164.109.162:5458/dm03/'
+        baseUrl = HHComicPattern.ServerList[self.server-1]
         for p in result:
             p = baseUrl + p
             resultList.append(p)
@@ -303,19 +322,11 @@ class HHManPattern(webSite.Pattern):
         '''
         http://hhcomic.com/hhpage/184295/hh118645.htm?s=3
         '''
-
-        pages = [];
-        baseUrl = self.pageUrl + 's=3*v='
-        for i in range(self.startNum, self.totalNum + 1):
-            url = baseUrl + str(i)
-            pages.append(url);
-            
+        pages = self.imgList
         return pages;
     
     def GetImageUrl(self, pageUrl):
-        num = pageUrl[pageUrl.rfind('=') + 1:]
-        number = (int)(num)
-        return self.imgList[number - 1];
+        return pageUrl
       
     def DownloadOnePage(self, pageUrl, folder, isChangeImgName, nowPageNum): 
         imgData = None;
@@ -342,8 +353,7 @@ class HHManPattern(webSite.Pattern):
                 
                 headers = {
                 'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.6) Gecko/20091201 Firefox/3.5.6',
-                'Referer':pageUrl,
-                'Host':'61.164.109.162:5458'
+                'Referer':self.pageUrl,
                 }
                 
                 req = urllib2.Request(
@@ -365,8 +375,8 @@ class HHManPattern(webSite.Pattern):
         time.sleep(0.5)
     
 if __name__ == '__main__':
-    pa = HHManPattern('http://hhcomic.com/hhpage/186596/hh57294.htm')
-    folder = '''e:\\Manga\KaXiu\\002''';
+    pa = 'http://hhcomic.com/hhpage/183638/hh29618.htm?s=4'
+    folder = '''e:\\Manga\htg1\\001''';
     myMangaPage = MangaPage(pa, folder)
     start = time.time();
     myMangaPage.GetImageFromPage(startNum=1, isChangeImgName=True, MultiThreadNum=4);

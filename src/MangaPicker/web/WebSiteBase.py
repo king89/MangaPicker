@@ -76,7 +76,7 @@ class Pattern:
         for pageUrl in self.GetPageList():
             self.DownloadOnePage(pageUrl, folder, isChangeImgName, nowPageNum);
             nowPageNum = nowPageNum + 1;
-        print('All Done')    
+#         print('All Done')    
         
     def GetPageList(self):
         assert 0; raise NoimplementError;
@@ -113,7 +113,7 @@ class Pattern:
             nowPageNum = arguments['nowPageNum'];
             self.DownloadOnePage(pageUrl, folder, isChangeImgName, nowPageNum)
             print('finished pic ' + str(nowPageNum));
-            print('use time :' + str(time.time() - start) + 'ms');
+            print('use time :' + str(time.time() - start) + 's');
             self.urlQueue.task_done()    
         
 ###############################################
