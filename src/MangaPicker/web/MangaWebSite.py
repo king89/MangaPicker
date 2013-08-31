@@ -9,7 +9,7 @@ import cookielib
 import re
 import os
 import time
-from pyquery import PyQuery as pq
+#from pyquery import PyQuery as pq
 
 
 class MangaWebSite(webSite.WebSite):
@@ -32,19 +32,23 @@ class MangaPage(webSite.WebPage):
     '''
 
 
-    def __init__(self, pattern, folder):
+    def __init__(self, url, folder):
         '''
         Constructor
         '''
+        pattern = self.GetPattern(url)
+        self.pattern = pattern  # a Manga Image pattern , means how to find this Image
+        self.folder = folder
 
-        self.pattern = pattern;  # a Manga Image pattern , means how to find this Image
-        self.folder = folder;
-
-            
         if os.path.exists(folder) == False:
             os.makedirs(folder)
-
-        
+            
+    def GetPattern(self,url):
+        if url.find('imanhua.com') > 0:
+            return ImanhuaPattern(url)
+        elif url.find('hhcomic.com'):
+            return HHComicPattern(url)
+            
     def ChangeCharSet(self, charSet):
         self.charSet = charSet;
     
@@ -78,48 +82,50 @@ class ImanhuaPattern(webSite.Pattern):
         html = urllib2.urlopen(pageUrl).read()
         print html
         #get the var cInfo in the js
+        cInfo = None
         codeRe = re.compile('(?<=var )cInfo={.+?}')
-        self.code = re.search(codeRe, html).group()
+        self.code = re.search(codeRe, html)
         if not self.code is None:
-            self.code = 'self.' + self.code
-            exec(self.code)
+            exec(self.code.group()) in globals(),locals()
             print self.cInfo
         else:
-            codeRe = re.compile('(?<=}\().+?(?=}\))')
-            self.code = re.search(codeRe, html).group()
-#        pageUrl = self.pageUrl
-#        headers = {
-#        'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.6) Gecko/20091201 Firefox/3.5.6',
-#        'Referer': pageUrl
-#        }
-#        cj = cookielib.LWPCookieJar()
-#        cookie_support = urllib2.HTTPCookieProcessor(cj)
-#        opener = urllib2.build_opener(cookie_support, urllib2.HTTPHandler)
-#        urllib2.install_opener(opener)
-#        
-#        req = urllib2.Request(url=pageUrl, headers=headers)
-#        result = urllib2.urlopen(req).read()
-#        self.totalNum = int(self.GetTotalNum(result));
-#        
-#        imgData = None;
-#        
-#        testPrefix = ('imanhua_', 'JOJO_', '')
-#        testFormat = ('jpg', 'png');
-#        for prefix in testPrefix:
-#            for myFormat in testFormat:
-#                self.patternDic['imagePrefix'] = prefix;  
-#                self.patternDic['imgFormat'] = myFormat;
-#                imageUrl = self.GetImageUrl(pageUrl);
-#                try:
-#                    req = urllib2.Request(url=imageUrl, headers=headers)
-#                    imgData = urllib2.urlopen(req).read()
-#                    if imgData:
-#                        print('ok: ' + prefix + ' + ' + myFormat);
-#                        return;
-#                except:
-#                    print('error: ' + prefix + ' + ' + myFormat);
-#                
+            p = re.compile('(?<=}\().+?(?=\)\))')
+            result = re.search(p,html)
+            if not result is None:
+                result = result.group()    
+                print result
+                
+                a = b = c = d = e = f = None
+                result = 'a,b,c,d,e,f = ' + result.replace('\\','\\\\')
+                exec(result) in globals(),locals()
+    #             print a,b,c,d,e,f
+                p = re.compile('[0-9a-zA-Z]{1,3}')
+                result = p.sub(lambda m: d[GetInt(m.group(0),b)],a)
+    #             print result    
+                result = result[(result.find('var')+3):]
+    
+                exec(result) in globals(),locals()
+                self.cInfo = cInfo
+            
+def GetInt(s,isDecimal):
+    aList = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    aList = [x for x in aList]
+    aDict = {}
+    for i in range(0,len(aList)):
+        aDict[aList[i]] = i
+    if isDecimal == 10:
+        return int(s)
+    else:
+        sList = [x for x in s]
+        sList.reverse()
+        total = 0
+        index = 0
+        for x in sList:
+            total = total + (isDecimal ** index ) * aDict[x]
+            index += 1
+        return total
 
+        
     def GetPageList(self):
         '''
         Return need to down pages list.
@@ -261,21 +267,35 @@ class Comic131Pattern(webSite.Pattern):
 #        print('Done ' + imageUrl);
         time.sleep(0.5)
        
-class HHManPattern(webSite.Pattern):
+class HHComicPattern(webSite.Pattern):
+    ServerList = ['http://61.164.109.162:5458/dm01/', 'http://61.164.109.141:9141/dm02/', 'http://61.164.109.162:5458/dm03/', 'http://61.164.109.141:9141/dm04/', 'http://61.164.109.162:5458/dm05/', 'http://61.164.109.141:9141/dm06/', 'http://61.164.109.162:5458/dm07/', 'http://61.164.109.141:9141/dm08/', 'http://61.164.109.162:5458/dm09/', 'http://61.164.109.162:5458/dm10/', 'http://61.164.109.141:9141/dm11/', 'http://61.164.109.162:5458/dm12/', 'http://61.164.109.162:5458/dm13/', 'http://8.8.8.8:99/dm14/', 'http://61.164.109.141:9141/dm15/', 'http://142.4.34.102/dm16/']
     def __init__(self, pageUrl):
         webSite.Pattern.__init__(self);
         self.pageUrl = pageUrl;
+        self.server = self.GetServer(pageUrl)
         html = urllib2.urlopen(pageUrl).read()
-        codeRe = re.compile('(?<=PicLlstUrl = ").+?(?=")')
-        self.code = re.search(codeRe, html).group()
-        print self.code
+        codeRe = re.compile('(?<=PicListUrl = ").+?(?=")')
+        self.code = re.search(codeRe, html)
+        if not self.code is None:
+            self.code = self.code.group()
+            self.key = 'tahficoewrm'
+        else:
+            codeRe = re.compile('(?<=PicLlstUrl = ").+?(?=")')
+            self.code = re.search(codeRe, html).group()  
+            self.key = 'tavzscoewrm'
+#         print self.code
         self.imgList = self.decode(); 
         self.totalNum = len(self.imgList)
         
+    def GetServer(self,url):
+        p = re.compile('(?<=s=)[0-9]{1,2}')
+        result = re.search(p,url).group()
+        return int(result)
+    
     def decode(self):
         code = self.code
         result = ''
-        key = 'tavzscoewrm'
+        key = self.key
         spliter = key[-1]
         key = key[:-1]
         i = 0
@@ -283,7 +303,7 @@ class HHManPattern(webSite.Pattern):
             code = code.replace(k, str(i));
             i = i + 1
         code = code.split(spliter)
-        print code
+#         print code
         
         for c in code:
             result = result + chr(int(c))
@@ -291,7 +311,7 @@ class HHManPattern(webSite.Pattern):
         result = result.split('|')
         
         resultList = []
-        baseUrl = 'http://61.164.109.162:5458/dm03/'
+        baseUrl = HHComicPattern.ServerList[self.server-1]
         for p in result:
             p = baseUrl + p
             resultList.append(p)
@@ -302,19 +322,11 @@ class HHManPattern(webSite.Pattern):
         '''
         http://hhcomic.com/hhpage/184295/hh118645.htm?s=3
         '''
-
-        pages = [];
-        baseUrl = self.pageUrl + 's=3*v='
-        for i in range(self.startNum, self.totalNum + 1):
-            url = baseUrl + str(i)
-            pages.append(url);
-            
+        pages = self.imgList
         return pages;
     
     def GetImageUrl(self, pageUrl):
-        num = pageUrl[pageUrl.rfind('=') + 1:]
-        number = (int)(num)
-        return self.imgList[number - 1];
+        return pageUrl
       
     def DownloadOnePage(self, pageUrl, folder, isChangeImgName, nowPageNum): 
         imgData = None;
@@ -332,13 +344,16 @@ class HHManPattern(webSite.Pattern):
             
             try:
                 cj = cookielib.LWPCookieJar()
+    
                 cookie_support = urllib2.HTTPCookieProcessor(cj)
+            
                 opener = urllib2.build_opener(cookie_support, urllib2.HTTPHandler)
+            
                 urllib2.install_opener(opener)
+                
                 headers = {
                 'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.6) Gecko/20091201 Firefox/3.5.6',
-                'Referer':pageUrl,
-                'Host':'61.164.109.162:5458'
+                'Referer':self.pageUrl,
                 }
                 
                 req = urllib2.Request(
@@ -360,8 +375,8 @@ class HHManPattern(webSite.Pattern):
         time.sleep(0.5)
     
 if __name__ == '__main__':
-    pa = ImanhuaPattern('http://www.imanhua.com/comic/3983/list_86892.html')
-    folder = '''e:\\Manga\LiarGame\\1151''';
+    pa = 'http://www.imanhua.com/comic/176/list_8220.html'
+    folder = '''e:\\Manga\htg1\\001''';
     myMangaPage = MangaPage(pa, folder)
     start = time.time();
     myMangaPage.GetImageFromPage(startNum=1, isChangeImgName=True, MultiThreadNum=4);
@@ -388,5 +403,4 @@ if __name__ == '__main__':
 #    myMangaPage.GetImageFromPage();
 #    
 #    print('All Done')
-    
     
