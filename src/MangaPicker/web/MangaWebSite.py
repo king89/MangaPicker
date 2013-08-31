@@ -82,50 +82,51 @@ class ImanhuaPattern(webSite.Pattern):
         html = urllib2.urlopen(pageUrl).read()
         print html
         #get the var cInfo in the js
-        cInfo = None
         codeRe = re.compile('(?<=var )cInfo={.+?}')
         self.code = re.search(codeRe, html)
         if not self.code is None:
-            exec(self.code.group()) in globals(),locals()
+            exec(self.code.group()) in  locals()
             print self.cInfo
         else:
             p = re.compile('(?<=}\().+?(?=\)\))')
             result = re.search(p,html)
             if not result is None:
                 result = result.group()    
-                print result
-                
-                a = b = c = d = e = f = None
+                #a = b = c = d = e = f = None
                 result = 'a,b,c,d,e,f = ' + result.replace('\\','\\\\')
-                exec(result) in globals(),locals()
+                print result
+                exec(result) in locals(),globals()
+                for i in range(0,len(d)):
+                    if d[i] == '':
+                        d[i] = '0'
     #             print a,b,c,d,e,f
                 p = re.compile('[0-9a-zA-Z]{1,3}')
-                result = p.sub(lambda m: d[GetInt(m.group(0),b)],a)
+                result = p.sub(lambda m: d[self.GetInt(m.group(0),b)],a)
     #             print result    
-                result = result[(result.find('var')+3):]
-    
-                exec(result) in globals(),locals()
+                result = result[(result.find('var ')+4):]
+                print result
+                exec(result) in  locals()
                 self.cInfo = cInfo
             
-def GetInt(s,isDecimal):
-    aList = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
-    aList = [x for x in aList]
-    aDict = {}
-    for i in range(0,len(aList)):
-        aDict[aList[i]] = i
-    if isDecimal == 10:
-        return int(s)
-    else:
-        sList = [x for x in s]
-        sList.reverse()
-        total = 0
-        index = 0
-        for x in sList:
-            total = total + (isDecimal ** index ) * aDict[x]
-            index += 1
-        return total
-
-        
+    def GetInt(self,s,isDecimal):
+        aList = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        aList = [x for x in aList]
+        aDict = {}
+        for i in range(0,len(aList)):
+            aDict[aList[i]] = i
+        if isDecimal == 10:
+            return int(s)
+        else:
+            sList = [x for x in s]
+            sList.reverse()
+            total = 0
+            index = 0
+            for x in sList:
+                total = total + (isDecimal ** index ) * aDict[x]
+                index += 1
+            return total
+    
+            
     def GetPageList(self):
         '''
         Return need to down pages list.
@@ -375,7 +376,7 @@ class HHComicPattern(webSite.Pattern):
         time.sleep(0.5)
     
 if __name__ == '__main__':
-    pa = 'http://www.imanhua.com/comic/176/list_8220.html'
+    pa = 'http://www.imanhua.com/comic/4280/list_85886.html'
     folder = '''e:\\Manga\htg1\\001''';
     myMangaPage = MangaPage(pa, folder)
     start = time.time();
