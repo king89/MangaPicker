@@ -9,14 +9,14 @@ import localzip.myZip as zip
 
 if __name__ == '__main__':
     downloadList = [];
-    for i in range(15,17):
-        oneItem = {'name' : 'chapter ' + '%03d' % (int(i)),
-                   'folder':'e:\\Manga\KaXiu\\'+'%03d' % (int(i)),
-                   'url':'http://hhcomic.com/hhpage/186596/hh'+str(57292+i)+'.htm'
-                   }
-        downloadList.append(oneItem)
+    downloadList = (
+            {'name' : 'chapter 1151',
+               'folder':'e:\\Manga\LiarGame\\1153',
+               'url':'http://www.imanhua.com/comic/200/list_43221.html'},
+            )
+
     for dl in downloadList:
-        pa = webSite.HHManPattern(dl['url'])
+        pa = webSite.ImanhuaPattern(dl['url'])
         folder = dl['folder']
         myMangaPage = webSite.MangaPage(pa, folder)
         start = time.time();
@@ -26,9 +26,7 @@ if __name__ == '__main__':
         
     print('All Pages Done')
     
-    for i in range(15,17):
-        dl = {'name' : 'chapter ' + '%03d' % (int(i)),
-                   'folder':'e:\\Manga\KaXiu\\'+'%03d' % (int(i))}
+    for dl in downloadList:
         zip.zip_dir(dl['folder'], dl['folder']+'.zip')
-        print('All Zip Done')
-    print(dl['name'] +' Zip Done')    
+        print(dl['name'] +' Zip Done')   
+    print('All Zip Done') 
