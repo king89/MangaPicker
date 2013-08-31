@@ -49,7 +49,6 @@ class MangaPage(webSite.WebPage):
         elif url.find('hhcomic.com'):
             return HHComicPattern(url)
             
-        
     def ChangeCharSet(self, charSet):
         self.charSet = charSet;
     
@@ -67,56 +66,75 @@ class ImanhuaPattern(webSite.Pattern):
         Constructor
 
         '''
-        self.pageUrl = pageUrl;
-        self.param = 'p';
-        self.startNum = 1;
-        self.patternDic = {};
-        self.patternDic['url'] = 'http://t5.mangafiles.com/Files/Images';
-        self.patternDic['imagePrefix'] = 'imanhua_';  # imanhua_ ,  JOJO_, no prefix  
-        self.patternDic['imgFormat'] = 'jpg'; 
+        self.pageUrl = pageUrl
+        self.cInfo = {}
+        self.param = 'p'
+        self.startNum = 1
+        self.patternDic = {}
+        self.patternDic['url'] = 'http://t5.mangafiles.com:88/Files/Images/'
+        self.patternDic['imagePrefix'] = 'imanhua_'  # imanhua_ ,  JOJO_, no prefix  
+        self.patternDic['imgFormat'] = 'jpg'
         self._InitSomeArgs();
 
         
     def _InitSomeArgs(self):
         pageUrl = self.pageUrl
-        headers = {
-        'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.6) Gecko/20091201 Firefox/3.5.6',
-        'Referer': pageUrl
-        }
-        cj = cookielib.LWPCookieJar()
-        cookie_support = urllib2.HTTPCookieProcessor(cj)
-        opener = urllib2.build_opener(cookie_support, urllib2.HTTPHandler)
-        urllib2.install_opener(opener)
-        
-        req = urllib2.Request(url=pageUrl, headers=headers)
-        result = urllib2.urlopen(req).read()
-        self.totalNum = int(self._GetTotalNum(result));
-        
-        imgData = None;
-        
-        testPrefix = ('imanhua_', 'JOJO_', '')
-        testFormat = ('jpg', 'png');
-        for prefix in testPrefix:
-            for myFormat in testFormat:
-                self.patternDic['imagePrefix'] = prefix;  
-                self.patternDic['imgFormat'] = myFormat;
-                imageUrl = self.GetImageUrl(pageUrl);
-                try:
-                    req = urllib2.Request(url=imageUrl, headers=headers)
-                    imgData = urllib2.urlopen(req).read()
-                    if imgData:
-                        print('ok: ' + prefix + ' + ' + myFormat);
-                        return;
-                except:
-                    print('error: ' + prefix + ' + ' + myFormat);
-                
+        html = urllib2.urlopen(pageUrl).read()
+        print html
+        #get the var cInfo in the js
+        codeRe = re.compile('(?<=var )cInfo={.+?}')
+        self.code = re.search(codeRe, html).group()
+        if not self.code is None:
+            self.code = 'self.' + self.code
+            exec(self.code)
+            print self.cInfo
+        else:
+            codeRe = re.compile('(?<=}\().+?(?=}\))')
+            self.code = re.search(codeRe, html).group()
+#        pageUrl = self.pageUrl
+#        headers = {
+#        'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.6) Gecko/20091201 Firefox/3.5.6',
+#        'Referer': pageUrl
+#        }
+#        cj = cookielib.LWPCookieJar()
+#        cookie_support = urllib2.HTTPCookieProcessor(cj)
+#        opener = urllib2.build_opener(cookie_support, urllib2.HTTPHandler)
+#        urllib2.install_opener(opener)
+#        
+#        req = urllib2.Request(url=pageUrl, headers=headers)
+#        result = urllib2.urlopen(req).read()
+#        self.totalNum = int(self.GetTotalNum(result));
+#        
+#        imgData = None;
+#        
+#        testPrefix = ('imanhua_', 'JOJO_', '')
+#        testFormat = ('jpg', 'png');
+#        for prefix in testPrefix:
+#            for myFormat in testFormat:
+#                self.patternDic['imagePrefix'] = prefix;  
+#                self.patternDic['imgFormat'] = myFormat;
+#                imageUrl = self.GetImageUrl(pageUrl);
+#                try:
+#                    req = urllib2.Request(url=imageUrl, headers=headers)
+#                    imgData = urllib2.urlopen(req).read()
+#                    if imgData:
+#                        print('ok: ' + prefix + ' + ' + myFormat);
+#                        return;
+#                except:
+#                    print('error: ' + prefix + ' + ' + myFormat);
+#                
+
     def GetPageList(self):
         '''
         Return need to down pages list.
         '''
+        baseUrl = self.patternDic['url'];
+        imgs = self.cInfo['files']
+        bid = self.cInfo['bid']
+        cid = self.cInfo['cid']
         pages = [];
-        for i in range(self.startNum, self.totalNum + 1):
-            url = self.pageUrl + '?' + self.param + '=' + str(i);
+        for img in imgs:
+            url = baseUrl + str(bid) + '/' + str(cid) + '/' + img
             pages.append(url);
         return pages;
     
@@ -127,67 +145,47 @@ class ImanhuaPattern(webSite.Pattern):
         http://www.imanhua.com/comic/1906/list_65095.html?p=1
         http://t5.mangafiles.com/Files/Images/155/66294/JOJO_001.png
         '''
-        reFirst = '/[0-9]+/'
-        reSec = 'list_[0-9]+'
-        firstNum = re.search(reFirst, pageUrl).group()
-        firstNum = firstNum.strip('/')
-        SecNum = re.search(reSec, pageUrl).group()
-        SecNum = SecNum.strip('list_')
-        nowNum = pageUrl[pageUrl.rfind('=') + 1:];
-        if nowNum == pageUrl:
-            nowNum = 1;
-        nowNum = '%03d' % (int(nowNum));
-        imageUrl = self.patternDic['url'].rstrip('/') + '/' + firstNum + '/' + SecNum + '/' + self.patternDic['imagePrefix'] + nowNum + '.' + self.patternDic['imgFormat'];
-        return imageUrl;
+        return pageUrl;
     
     def DownloadOnePage(self, pageUrl, folder, isChangeImgName, nowPageNum):
-        headers = {
-        'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.6) Gecko/20091201 Firefox/3.5.6',
-        'Referer': pageUrl
-        }
-        cj = cookielib.LWPCookieJar()
-        cookie_support = urllib2.HTTPCookieProcessor(cj)
-        opener = urllib2.build_opener(cookie_support, urllib2.HTTPHandler)
-        urllib2.install_opener(opener)
-        
-        req = urllib2.Request(url=pageUrl, headers=headers)
-        result = urllib2.urlopen(req).read()
         imgData = None;
-        
         imageUrl = self.GetImageUrl(pageUrl);
 #        print('Getting ' + imageUrl);
-        testTimes = 1;
-        while testTimes <= 3:
-            try:
-                testTimes = testTimes + 1;
-                req = urllib2.Request(url=imageUrl, headers=headers)
-                imgData = urllib2.urlopen(req).read()
-                if imgData:
-                    break;
-            except:
-                ext = self.patternDic['imgFormat'];
-                if ext == 'png':
-                    imageUrl = imageUrl.replace('png', 'jpg');
-                    self.patternDic['imgFormat'] = 'jpg';
-                elif ext == 'jpg':
-                    imageUrl = imageUrl.replace('jpg', 'png');
-                    self.patternDic['imgFormat'] = 'png';
-                
-                continue;
-            
-        extention = imageUrl.rfind('.');
-        extention = imageUrl[extention + 1:];
-
         if isChangeImgName == False:
             fileName = imageUrl[imageUrl.rfind('/') + 1:imageUrl.rfind('.')];
         else:
             fileName = '%03d' % nowPageNum;
+                            
+        extention = imageUrl.rfind('.');
+        extention = imageUrl[extention + 1:];
         path = folder + '\\' + fileName + '.' + extention;
         if not os.path.exists(path):
+            
+            try:
+                cj = cookielib.LWPCookieJar()
+                cookie_support = urllib2.HTTPCookieProcessor(cj)
+                opener = urllib2.build_opener(cookie_support, urllib2.HTTPHandler)
+                urllib2.install_opener(opener)
+                headers = {
+                'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.6) Gecko/20091201 Firefox/3.5.6',
+                'Referer':self.pageUrl,
+                }
+                
+                req = urllib2.Request(
+                url=imageUrl,
+                headers=headers
+                )
+                print imageUrl
+                imgData = urllib2.urlopen(req).read()
+                if not imgData:
+                    imgData = '';
+            except:
+                print('Error ' + imageUrl);
+                
             if imgData:
                 imgFile = open(path, 'wb')
                 imgFile.write(imgData);
-                
+                    
 #        print('Done ' + imageUrl);
         time.sleep(0.5)
 
@@ -403,5 +401,4 @@ if __name__ == '__main__':
 #    myMangaPage.GetImageFromPage();
 #    
 #    print('All Done')
-    
     
